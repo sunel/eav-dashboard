@@ -1,0 +1,31 @@
+@push('styles')
+<%
+for (key in htmlWebpackPlugin.files.css) { %><%
+    if (htmlWebpackPlugin.files.cssIntegrity) { %>
+<link
+    href="{{asset(mix('<%= htmlWebpackPlugin.files.css[key] %>', 'vendor/eav-dashboard'))}}"
+    rel="stylesheet"
+    integrity="<%= htmlWebpackPlugin.files.cssIntegrity[key] %>"
+    crossorigin="<%= webpackConfig.output.crossOriginLoading %>" /><%
+    } else { %>
+<link href="{{asset(mix('<%= htmlWebpackPlugin.files.css[key] %>', 'vendor/eav-dashboard'))}}" rel="stylesheet" /><%
+    } %><%
+} %>
+
+@endpush
+
+@push('scripts')
+<%
+for (key in htmlWebpackPlugin.files.js) { %><%
+    if (htmlWebpackPlugin.files.jsIntegrity) { %>
+<script
+    src="{{asset(mix('<%= htmlWebpackPlugin.files.js[key] %>', 'vendor/eav-dashboard'))}}"
+    type="text/javascript"
+    integrity="<%= htmlWebpackPlugin.files.jsIntegrity[key] %>"
+    crossorigin="<%= webpackConfig.output.crossOriginLoading %>"></script><%
+    } else { %>
+<script src="{{asset(mix('<%= htmlWebpackPlugin.files.js[key] %>', 'vendor/eav-dashboard'))}}" type="text/javascript"></script><%
+    } %><%
+} %>
+
+@endpush

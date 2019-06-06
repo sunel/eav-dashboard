@@ -1,0 +1,34 @@
+{
+    "name": "sunel/eav-dashboard",
+    "description": "Eav Dashboard.",
+    "keywords": ["eav", "laravel"],
+    "license": "MIT",
+    "require": {
+        "php": ">=7.0.0",
+        "sunel/eav":"^0.1.0",
+        "sunel/json-api-resources":"^0.1"
+    },
+    "authors": [
+        {
+            "name": "Sunel TR",
+            "email": "sunelbe@gmail.com"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Eav\\Dashboard\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Eav\\Dashboard\\TestCase\\" : "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Eav\\Dashboard\\LaravelServiceProvider"
+            ]
+        }
+    }
+}
