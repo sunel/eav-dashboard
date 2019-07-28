@@ -5,9 +5,9 @@ import styled from 'styled-components';
 import isEqual from 'lodash.isequal';
 import { DragDropContext, Droppable } from 'react-beautiful-dnd';
 
-import { listGroups, reorderSet, saveGroupAttributes, dataChanged } from '../actions';
+import { listGroups, reorderSet, saveGroupAttributes, dataChanged, removeGroup } from '../actions';
 import { selectGroups, selectGroupAttributes, selectAttributes } from '../selectors/entity';
-import { persistSet } from '../utils/WebAPI';
+import { presistSetRegroup, deleteGroup } from '../utils/WebAPI';
 import { hasChanges } from '../selectors/cockpit';
 import { updateSequence } from '../utils/common';
 import { ResponsiveContext } from "../contexts/Responsive";
@@ -17,6 +17,7 @@ import FallbackLoading from './FallbackLoading';
 import Group from './Group';
 
 const AddGroup = lazy(() => import('./AddGroup' /* webpackChunkName: "addGroup" */));
+const EditGroup = lazy(() => import('./EditGroup' /* webpackChunkName: "editGroup" */));
 const AttributeList = lazy(() => import('./AttributeList' /* webpackChunkName: "attributeList" */));
 const AddAttribute = lazy(() => import('./AddAttribute' /* webpackChunkName: "addAttribute" */));
 
@@ -59,11 +60,13 @@ class Set extends PureComponent {
         subDrawer: false,
         subDrawerContent: null,
         subDrawerTitle: null,
+        subDrawerData: {},
         loading: false,
     };
 
     getAttributes = () => [];
     updateAttributes = () => null;
+    reloadAttributeList = () => null;
 
     componentDidMount = () => {
         this.props.dispatch(listGroups({ params: { entity: this.props.entity, set: this.props.set.id }}));
@@ -78,6 +81,139 @@ class Set extends PureComponent {
             subDrawerContent: 'addGroup',
             subDrawerTitle: 'Add Group',
             subDrawer: true,
+        });
+    }
+
+    editGroup = (id, name, updateIndex) => {
+        this.setState({            
+            subDrawerContent: 'editGroup',
+            subDrawerTitle: 'Edit Group',
+            subDrawerData: {
+                id, name, updateIndex
+            },
+            subDrawer: true,
+        });
+    }
+
+    deleteGroup = async (id, removeIndex) => {
+        this.setState((state) => {
+            return {
+              ...state,
+              loading: true,
+            } 
+        });
+    
+        const hide = message.loading('Deleting..', 0);
+    
+        try {
+            
+            await deleteGroup({ entity: this.props.entity, set: this.props.set.id, group: id });
+    
+            hide();
+
+            const group = this.props.groups.toJS().find(group => {
+                return group.id === id;
+            });
+
+            this.props.getGroupAttr(group.id).forEach(attribute => {
+                this.updateAttributes(attribute, true);
+            });
+            
+            this.props.dispatch(removeGroup({ set: this.props.set.id, removeIndex }));
+    
+            message.success('Group deleted.', 2);
+
+            await this.onSave();
+    
+        } catch (error) {
+
+            let message, description;
+            if(error.type === 'network') {
+                message = 'Network Error';
+                description = error.message;
+            } 
+            else if(error.type === 'server') {
+                message = error.error.errors[0].title;
+                description = error.error.errors[0].detail;
+            }
+    
+            hide();
+    
+            notification.error({
+                message,
+                description,
+                duration: 0
+            });
+    
+            this.setState((state) => {
+                return {
+                  ...state,
+                  loading: false,
+                } 
+            });
+        }
+    }
+
+    onCancel = () => {
+        this.props.close();
+    }
+
+    onSave = async () => {
+
+        this.setState((state) => {
+            return {
+                loading: true,
+            } 
+        });
+
+        const hide = message.loading('Saving changes..', 0);
+
+        let groups = updateSequence(this.props.groups);
+
+        groups = groups.toJS().map(group => {
+            const attributes = updateSequence(this.props.getGroupAttr(group.id)).map(attribute => {
+                return {
+                    id: attribute.get('id'),
+                    type: attribute.get('type'),
+                    sequence: attribute.get('sequence'),
+                }
+            });
+
+            group['attributes'] = attributes.toJS();
+
+            return group;
+        });
+
+        try {
+            await presistSetRegroup({ entity: this.props.entity, set: this.props.set.id }, groups, {});
+
+            this.props.dispatch(dataChanged({ type: 'entityViewer', changed: false}));
+
+            hide();
+
+            message.success('Changes has been saved.');
+
+        } catch (error) {
+            let message, description;
+            if(error.type === 'network') {
+                message = 'Network Error';
+                description = error.message;
+            } 
+            else if(error.type === 'server' && error.status === 500) {
+                message = error.error.errors[0].title;
+                description = error.error.errors[0].detail;
+            }
+            notification.error({
+                message,
+                description,
+                duration: 0
+            });
+        }
+
+        this.setState((state) => {
+            return {
+                loading: false,
+            } 
         });
     }
 
@@ -97,14 +233,21 @@ class Set extends PureComponent {
         });
     };
 
+    onAddtributeAdd = () => {
+        this.reloadAttributeList();
+    }
+
     getDrawerContent = () => {
         let content;
         switch(this.state.subDrawerContent) {
             case 'addGroup':
-                content = <AddGroup entity={this.props.entity} set={this.props.set} close={this.onSubDrawerClose}/>;
+                content = <AddGroup entity={this.props.entity} set={this.props.set} close={this.onSubDrawerClose} {...this.state.subDrawerData}/>;
+            break;
+            case 'editGroup':
+                content = <EditGroup entity={this.props.entity} set={this.props.set} close={this.onSubDrawerClose} {...this.state.subDrawerData} />;
             break;
             case 'addAttribute':
-                content = <AddAttribute entity={this.props.entity} close={this.onSubDrawerClose}/>;
+                content = <AddAttribute entity={this.props.entity} close={this.onSubDrawerClose} onAdd={this.onAddtributeAdd} {...this.state.subDrawerData}/>;
             break;
             default:
                 content = null;
@@ -237,69 +380,6 @@ class Set extends PureComponent {
         }
     };
 
-    onCancel = () => {
-        this.props.close();
-    }
-
-    onSave = async () => {
-
-        this.setState((state) => {
-            return {
-                loading: true,
-            } 
-        });
-
-        const hide = message.loading('Saving changes..', 0);
-
-        let groups = updateSequence(this.props.groups);
-
-        groups = groups.toJS().map(group => {
-            const attributes = updateSequence(this.props.getGroupAttr(group.id)).map(attribute => {
-                return {
-                    id: attribute.get('id'),
-                    type: attribute.get('type'),
-                    sequence: attribute.get('sequence'),
-                }
-            });
-
-            group['attributes'] = attributes.toJS();
-
-            return group;
-        });
-
-        try {
-            await persistSet({ entity: this.props.entity, set: this.props.set.id }, groups, {});
-
-            this.props.dispatch(dataChanged({ type: 'entityViewer', changed: false}));
-
-            hide();
-
-            message.success('Changes has been saved.');
-
-        } catch (error) {
-            let message, description;
-            if(error.type === 'network') {
-                message = 'Network Error';
-                description = error.message;
-            } 
-            else if(error.type === 'server' && error.status === 500) {
-                message = error.error.errors[0].title;
-                description = error.error.errors[0].detail;
-            }
-            notification.error({
-                message,
-                description,
-                duration: 0
-            });
-        }
-
-        this.setState((state) => {
-            return {
-                loading: false,
-            } 
-        });
-    }
-
     render() {
         return (
             <Fragment>
@@ -338,25 +418,28 @@ class Set extends PureComponent {
                                     </Button> 
                                   </Empty>
                                 )}
-                                {this.props.loadingGroup && (
+                                {this.props.loadingGroup ? (
                                     <FallbackLoading />
-                                )}                                
-                                <Droppable droppableId="groups-droppable" type="groups">
-                                    {(provided, snapshot) => (
-                                        <GroupPanelWrapper ref={provided.innerRef}>
-                                            {this.props.groups.map((group, index) => (
-                                                <Group 
-                                                    key={index} 
-                                                    entity={this.props.entity} 
-                                                    set={this.props.set.id}  
-                                                    group={group} 
-                                                    index={index} 
-                                                />
-                                            ) )}            
-                                            {provided.placeholder}
-                                        </GroupPanelWrapper>
-                                    )}
-                                </Droppable>
+                                ) : (
+                                    <Droppable droppableId="groups-droppable" type="groups">
+                                        {(provided, snapshot) => (
+                                            <GroupPanelWrapper ref={provided.innerRef}>
+                                                {this.props.groups.map((group, index) => (
+                                                    <Group 
+                                                        key={index} 
+                                                        entity={this.props.entity} 
+                                                        set={this.props.set.id}  
+                                                        group={group}
+                                                        edit={this.editGroup}
+                                                        delete={this.deleteGroup}
+                                                        index={index} 
+                                                    />
+                                                ) )}            
+                                                {provided.placeholder}
+                                            </GroupPanelWrapper>
+                                        )}
+                                    </Droppable>
+                                )}
                             </Container>
                         </Col>
                         <Col span={24} md={8}>
@@ -366,6 +449,7 @@ class Set extends PureComponent {
                                     set={this.props.set} 
                                     getAttributes={(call)=>this.getAttributes=call} 
                                     updateAttributes={(call)=>this.updateAttributes=call}
+                                    reload={(call)=>this.reloadAttributeList=call}
                                 />
                             </Suspense>
                         </Col>

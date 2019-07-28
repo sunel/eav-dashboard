@@ -24,6 +24,11 @@ class AddAttribute extends PureComponent {
         showSelectSource: false,
     };
 
+    static defaultProps = {
+        onAdd: () => null,
+        close: () => null       
+    };
+
     componentDidMount() {
         this.props.form.validateFields().catch(() => { });
 
@@ -81,6 +86,7 @@ class AddAttribute extends PureComponent {
 
             message.success('Changes has been saved.', 1).then(() => {
                 this.props.close();
+                this.props.onAdd();
             });
 
         } catch (error) {

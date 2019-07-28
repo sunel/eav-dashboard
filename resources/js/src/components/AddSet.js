@@ -2,7 +2,6 @@ import React, { PureComponent } from 'react';
 import { Form, Input, Button, notification, message } from 'antd';
 import { connect } from 'react-redux';
 
-import { saveSet } from '../actions';
 import { presistSet } from '../utils/WebAPI';
 
 function hasErrors(fieldsError) {
@@ -42,7 +41,7 @@ class AddSet extends PureComponent {
 
             const response = await presistSet({ entity: this.props.entity.entity_code }, post, {});
 
-            this.props.dispatch(saveSet({ entity: this.props.index, response }));
+            this.props.updateSet(response);
 
             hide();
 

@@ -10,6 +10,7 @@ import FallbackLoading from './FallbackLoading';
 
 const Set = lazy(() => import('./Set' /* webpackChunkName: "set" */));
 const AddSet = lazy(() => import('./AddSet' /* webpackChunkName: "addSet" */));
+const EditSet = lazy(() => import('./EditSet' /* webpackChunkName: "editSet" */));
 const AddAttribute = lazy(() => import('./AddAttribute' /* webpackChunkName: "addAttribute" */));
 const EditAttribute = lazy(() => import('./EditAttribute' /* webpackChunkName: "editAttribute" */));
 
@@ -22,7 +23,7 @@ class GloableDrawer extends PureComponent {
     onClose = () => null; 
 
     getContent = (props) => {    
-        
+        this.canClose = () => true;
         if(!props.visible) return [null, null];
 
         const { data } = props;
@@ -41,6 +42,16 @@ class GloableDrawer extends PureComponent {
             return [
                 `Add Set`, 
                 <AddSet 
+                    {...data}
+                    close={this.close} 
+                    canClose={ state => (this.canClose = state) } 
+                    onClose={ func => (this.onClose = func ) }
+                />
+            ];
+        } else if(data.type === 'editSet') {
+            return [
+                `Edit Set`, 
+                <EditSet 
                     {...data}
                     close={this.close} 
                     canClose={ state => (this.canClose = state) } 

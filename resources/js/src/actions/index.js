@@ -41,6 +41,8 @@ export const reorderSet = createAction('REORDER/SET');
 
 export const getGroup = createRoutine('GET/GROUP');
 
+export const removeGroup = createAction('DELETE/GROUP');
+
 export const listGroups = createRoutine('LIST/GROUP');
 
 export const listGroupsAttributes = createRoutine('LIST/GROUP/ATTRIBUTES');

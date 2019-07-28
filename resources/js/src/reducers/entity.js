@@ -1,5 +1,5 @@
 import { fromJS } from 'immutable';
-import { listEntities, saveEntity, expandTable, saveSet } from '../actions';
+import { listEntities, saveEntity, expandTable } from '../actions';
 
 export const initialEntityState = {
     entity: {
@@ -28,8 +28,4 @@ export const entityReducers  = {
     if(action.payload.type !== 'entity') return state; 
     return state.updateIn([ 'entity', 'expandedRowKeys' ], value => fromJS(action.payload.keys));
   },
-
-  [saveSet]: (state, action) => {
-    return state.updateIn([ 'entity', 'data', action.payload.entity, 'sets' ], value => value.push(fromJS(action.payload.response.data)));
-  }
 };

@@ -52,6 +52,30 @@ export const deleteAttribute = (params) => {
             });
 };
 
+export const deleteSet = (params) => {
+    return request(urlWithQuery(url('delete_set', params), {}), {
+                method: "DELETE",
+                headers: {
+                    "Content-Type": "application/json",                    
+                }
+            })
+            .then(json => {
+                return Promise.resolve({});
+            });
+};
+
+export const deleteGroup = (params) => {
+    return request(urlWithQuery(url('delete_group', params), {}), {
+                method: "DELETE",
+                headers: {
+                    "Content-Type": "application/json",                    
+                }
+            })
+            .then(json => {
+                return Promise.resolve({});
+            });
+};
+
 const presistData = (type, params, post, query, method="POST") => {    
     return request(urlWithQuery(url(type, params), query), {
                 method,
@@ -76,8 +100,16 @@ export const presistSet = (params, post, query) => {
     return presistData('create_set', params, post, query);
 };
 
+export const presistExistingSet = (params, post, query) => {
+    return presistData('update_set', params, post, query, 'PUT');
+};
+
 export const presistGroup = (params, post, query) => {
     return presistData('create_group', params, post, query);
+};
+
+export const presistExistingGroup = (params, post, query) => {
+    return presistData('update_group', params, post, query, 'PUT');
 };
 
 export const presistAttribute = (params, post, query) => {
@@ -88,9 +120,9 @@ export const presistExistingAttribute = (params, post, query) => {
     return presistData('update_attribute', params, post, query, 'PUT');
 };
 
-export const persistSet = (params, post, query) => {
+export const presistSetRegroup = (params, post, query) => {
     const postData = { data: dataFormatter.serialize(post, ['attributes']) };    
-    return request(urlWithQuery(url('update_set', params), query), {
+    return request(urlWithQuery(url('update_set_group', params), query), {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",                    

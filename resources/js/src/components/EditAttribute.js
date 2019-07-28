@@ -49,7 +49,14 @@ export class EditAttribute extends PureComponent {
         fetchAttribute({ entity: this.props.entity, code: this.props.attribute }).then(({ data }) => {
 
             const { setFieldsValue } = this.props.form;
-            const { backend_type, is_required, is_filterable, is_searchable, frontend_label, frontend_type} = data;
+            const { backend_type, is_required, is_filterable, is_searchable, frontend_label, frontend_type, source_class } = data;            
+
+            this.setState(state => {
+                return {
+                    ...state,
+                    showSelectSource: frontend_type === 'select',
+                };
+            });
 
             setFieldsValue({ 
                 backend_type, 
@@ -57,7 +64,8 @@ export class EditAttribute extends PureComponent {
                 is_filterable: !!(is_filterable),
                 is_searchable: !!(is_searchable),
                 frontend_label, 
-                frontend_type
+                frontend_type,
+                select_source: source_class
             });
 
             hide();

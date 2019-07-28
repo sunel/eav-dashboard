@@ -1,5 +1,5 @@
 import { fromJS } from 'immutable';
-import { updateSet, reorderSet, listGroups } from '../actions';
+import { updateSet, reorderSet, listGroups, removeGroup } from '../actions';
 
 export const initialSetState = {
     sets: {
@@ -27,6 +27,16 @@ export const setReducers  = {
   },
   
   [updateSet]: (state, action) => {
+
+    if(action.payload.params.group) {
+      return state.updateIn([ 'sets', 'groups', action.payload.params.set, action.payload.params.updateIndex ], value => fromJS(action.payload.data));
+    }
+
     return state.updateIn([ 'sets', 'groups', action.payload.params.set ], value => value.push(fromJS(action.payload.data)));
+  },
+
+  [removeGroup]: (state, action) => {
+
+    return state.updateIn([ 'sets', 'groups', action.payload.set ], value => value.delete(action.payload.removeIndex));
   },
 };

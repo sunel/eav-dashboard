@@ -1,11 +1,11 @@
 import React, { Component, Fragment } from 'react';
-import { Row, Col, Table, Button, Input } from 'antd';
+import { Row, Col, Table, Button, Input, Popconfirm, notification, message  } from 'antd';
 import styled from 'styled-components';
 import { connect } from 'react-redux';
 import { push } from 'connected-react-router';
 
 import { openDrawer } from '../actions';
-import { fetchSets } from '../utils/WebAPI';
+import { fetchSets, deleteSet } from '../utils/WebAPI';
 
 const SearchWarpper = styled.div`
   width: 200px;
@@ -24,12 +24,10 @@ const Title = styled.span`
   text-transform: uppercase;
 `;
 
-const columns = [{
-  title: 'Name',
-  dataIndex: 'name',
-  key: 'name',
-  render: text => <Title>{text}</Title>,
-}];
+const ActionMenu = styled.div`
+  display: inline;
+  margin-left: 1rem;
+`
 
 class Sets extends Component {
 
@@ -39,6 +37,7 @@ class Sets extends Component {
     data: [],
     loading: false,
     total: null,
+    showMenu: null,
   }
 
   componentDidMount() {
@@ -55,12 +54,41 @@ class Sets extends Component {
     this.requestData(this.state.listSize, 1, { 'filter[search]': value });
   }
 
-  onItemClick = (item) => {
+  viewSet = (item) => {
     this.props.dispatch(openDrawer({ type: 'set', entity: this.props.entity.entity_code, set: item }));
   }
 
+  updateSet = (response, index) => {
+    if(!index) {
+      this.setState((state) => {
+        return {
+            ...state,
+            data: [
+            ...state.data,
+            response.data
+          ]
+        };
+      })
+    } else {
+      this.setState((state) => {
+        let data = state.data;
+        data[`${index}`] = response.data
+        return {
+          ...state,
+          data: [
+            ...data
+          ]
+        };
+      })
+    }
+  }
+
   addSet = () => {
-    this.props.dispatch(openDrawer({ type: 'addSet', entity: this.props.entity, index: this.props.index }));
+    this.props.dispatch(openDrawer({ type: 'addSet', entity: this.props.entity, updateSet: this.updateSet }));
+  }
+
+  editSet = (rowIndex, id, name) => {
+    this.props.dispatch(openDrawer({ type: 'editSet', entity: this.props.entity, updateSet: this.updateSet, id, name, index: rowIndex }));
   }
 
   addAttribute = () => {
@@ -71,7 +99,86 @@ class Sets extends Component {
     this.props.dispatch(push(`/attributes?entity=${this.props.entity.entity_code}`));
   }
 
+  handleDelete = async (set) => {
+    
+    this.setState((state) => {
+        return {
+          ...state,
+          loading: true,
+        } 
+    });
+
+    const hide = message.loading('Deleting..', 0);
+
+    try {
+        
+        await deleteSet({ entity: this.props.entity.entity_code, set });
+
+        hide();
+
+        this.requestData(this.props.listSize, 1);
+
+        message.success('Set deleted.', 2);
+
+    } catch (error) {
+
+        let message, description;
+        if(error.type === 'network') {
+            message = 'Network Error';
+            description = error.message;
+        } 
+        else if(error.type === 'server') {
+            message = error.error.errors[0].title;
+            description = error.error.errors[0].detail;
+        }
+
+        hide();
+
+        notification.error({
+            message,
+            description,
+            duration: 0
+        });
+
+        this.setState((state) => {
+            return {
+              ...state,
+              loading: false,
+            } 
+        });
+    }
+  }
+
   render() {
+    const columns = [{
+      title: 'Name',
+      dataIndex: 'name',
+      key: 'name',
+      render: (text, record, rowIndex) => (
+        <>
+          <Title>{text}</Title>
+          {(this.state.showMenu === rowIndex) && (
+            <ActionMenu>
+              <Button type="dashed" size="small"  onClick={() => this.viewSet(record)}>
+                View
+              </Button>
+              <Button type="primary" icon="edit" size="small" style={{ marginLeft: 8 }} onClick={() => this.editSet(rowIndex, record.id, text)}>
+                Edit Name
+              </Button>
+              <Popconfirm 
+                  title="Sure to delete?"
+                  onConfirm={() => this.handleDelete(record.id)}
+                >
+                <Button type="danger" icon="delete" size="small" style={{ marginLeft: 8 }}>
+                  Delete
+                </Button>
+              </Popconfirm>    
+            </ActionMenu>
+          )}
+        </>
+      ),
+    }];
+
     return (
       <Fragment>
         <Row type="flex" justify="space-around">
@@ -80,7 +187,7 @@ class Sets extends Component {
               <Col span={6}>
                 <SearchWarpper>
                   <Input.Search
-                    placeholder="Search Entity"
+                    placeholder="Search Set"
                     size="large"
                     onSearch={this.search}
                   />
@@ -89,22 +196,16 @@ class Sets extends Component {
             </Row>
           </Col>
           <Col span={24} md={12}>
-            <Row type="flex" justify="end">
-              <Col span={6} md={4} style={{ textAlign: "right" }}>
-                <Button type="dashed" style={{ marginBottom: 8 }} onClick={this.viewAttributes}>
-                  View Attributes
-                  </Button>
-              </Col>
-              <Col span={6} md={4} style={{ textAlign: "right" }}>
-                <Button type="primary" icon="plus" style={{ marginBottom: 8 }} onClick={this.addSet}>
-                  Set
-                  </Button>
-              </Col>
-              <Col span={8} md={4} style={{ textAlign: "right" }}>
-                <Button type="primary" icon="plus" style={{ marginBottom: 8 }} onClick={this.addAttribute}>
-                  Attribute
-                  </Button>
-              </Col>
+            <Row type="flex" justify="space-around">
+              <Button type="dashed" style={{ marginBottom: 8 }} onClick={this.viewAttributes}>
+                View Attributes
+              </Button>
+              <Button type="primary" icon="plus" style={{ marginBottom: 8 }} onClick={this.addSet}>
+                Set
+              </Button>
+              <Button type="primary" icon="plus" style={{ marginBottom: 8 }} onClick={this.addAttribute}>
+                Attribute
+              </Button>
             </Row>
           </Col>
         </Row>
@@ -114,7 +215,8 @@ class Sets extends Component {
               <Table
                 onRow={(record, rowIndex) => {
                   return {
-                    onClick: (event) => this.onItemClick(record),
+                    onMouseEnter: event =>  this.setState({ showMenu: rowIndex }),
+                    onMouseLeave: event =>  this.setState({ showMenu: null })
                   };
                 }}
                 pagination={{

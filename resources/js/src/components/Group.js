@@ -1,5 +1,5 @@
 import React, { PureComponent } from 'react';
-import { Button, Icon, Skeleton } from 'antd';
+import { Button, Icon, Skeleton, Popconfirm, Divider } from 'antd';
 import { connect } from 'react-redux';
 import styled from 'styled-components';
 import { Droppable, Draggable } from 'react-beautiful-dnd';
@@ -26,7 +26,6 @@ const Header = styled.div`
 const Content = styled.div`
     padding: 4px 16px 16px 16px;
     display: flex;
-    flext-direction: column;
     flex-wrap: wrap;
 `;
 
@@ -77,7 +76,14 @@ class GroupPanel extends PureComponent {
                         <Header>
                             <Drag type="drag" {...provided.dragHandleProps} />
                             <span>{group.get('name')}</span>
-                            <Edit type="dashed" shape="circle" icon="edit" size="small" />
+                            <Edit type="dashed" shape="circle" icon="edit" size="small" onClick={() => this.props.edit(group.get('id'), group.get('name'), index)}/>
+                            <Divider type="vertical" />
+                            <Popconfirm 
+                                title="Sure to delete?"
+                                onConfirm={() => this.props.delete(group.get('id'), index)}
+                                >
+                                <Icon type="delete" style={{ color: 'red' }}/>
+                            </Popconfirm>    
                         </Header>
                         <Droppable droppableId={`group-${group.get('id')}`} type="attributes" direction="horizontal">
                             {(provided, snapshot) => (                               

@@ -21,14 +21,16 @@ class SelectSource extends PureComponent {
                 } 
             });
         });
+        
     }
 
     render() {
         const {
-            getFieldDecorator, getFieldError, isFieldTouched,
+            getFieldDecorator, getFieldError, isFieldTouched
         } = this.props.form;
 
         const selectSourceError = isFieldTouched('select_source') && getFieldError('select_source');
+        
 
         return (
             <Form.Item
@@ -37,6 +39,7 @@ class SelectSource extends PureComponent {
                 help={selectSourceError || ''}
             >
                 {getFieldDecorator('select_source', {
+                    initialValue: "database",
                     rules: [{ required: true, message: 'Please select a source!' }],
                 })(
                     <Select 

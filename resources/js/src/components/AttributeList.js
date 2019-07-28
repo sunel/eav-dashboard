@@ -47,11 +47,16 @@ class AttributeList extends PureComponent {
 
         this.props.getAttributes(this.getAttributes);
         this.props.updateAttributes(this.updateAttributes);
+        this.props.reload(this.reload);
         this.requestData = debounce(this.requestData, 800);
     }
 
     getAttributes = () => {
         return this.state.attributes;
+    }
+
+    reload = () => {
+        this.requestData(1);
     }
 
     updateAttributes = (item, removed=false) => {
@@ -140,14 +145,14 @@ class AttributeList extends PureComponent {
                             <List
                                 ref={provided.innerRef}
                             >
-                                <InfiniteLoader
-                                    isItemLoaded={this.isItemLoaded}
-                                    itemCount={itemCount}
-                                    loadMoreItems={loadMoreItems}
-                                >
-                                    {({ onItemsRendered, ref }) => (
-                                        <AutoSizer>
-                                            {({ height, width }) => (
+                                <AutoSizer>
+                                    {({ height, width }) => (
+                                        <InfiniteLoader
+                                            isItemLoaded={this.isItemLoaded}
+                                            itemCount={itemCount}
+                                            loadMoreItems={loadMoreItems}
+                                        >
+                                            {({ onItemsRendered, ref }) => (                                                
                                                 <FixedSizeList
                                                     itemCount={itemCount}
                                                     onItemsRendered={onItemsRendered}
@@ -160,15 +165,15 @@ class AttributeList extends PureComponent {
                                                     }}
                                                 >
                                                     {Item}
-                                                </FixedSizeList>
+                                                </FixedSizeList>                                                    
                                             )}
-                                        </AutoSizer>
+                                        </InfiniteLoader>
                                     )}
-                                </InfiniteLoader>
+                                </AutoSizer>
                                 {provided.placeholder}
                             </List>
                         )}
-                    </Droppable>;
+                    </Droppable>
                 </Container>
             </div>
         );
