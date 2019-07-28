@@ -2,7 +2,7 @@
 
 namespace Eav\Dashboard\Http\Controllers;
 
-use Eav\Api\Http\Middleware\Authenticate;
+use Eav\Dashboard\Http\Middleware\Authenticate;
 use Illuminate\Routing\Controller as BaseController;
 
 class HomeController extends BaseController

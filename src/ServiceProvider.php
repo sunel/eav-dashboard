@@ -2,6 +2,7 @@
 
 namespace Eav\Dashboard;
 
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider as IlluminateServiceProvider;
 
@@ -29,6 +30,39 @@ class ServiceProvider extends IlluminateServiceProvider
             ], 'eav-dashboard-config');
 
         }
+
+        $this->authorization();
+    }
+
+    /**
+     * Configure the authorization services.
+     *
+     * @return void
+     */
+    protected function authorization()
+    {
+        $this->gate();
+
+        Registery::auth(function ($request) {
+            return app()->environment('local') ||
+                   Gate::check('viewEavDash', [$request->user()]);
+        });
+    }
+    
+    /**
+     * Register the gate.
+     *
+     * This gate determines who can access in non-local environments.
+     *
+     * @return void
+     */
+    protected function gate()
+    {
+        Gate::define('viewEavDash', function ($user) {
+            return in_array($user->email, [
+                //
+            ]);
+        });
     }
 
      /**
