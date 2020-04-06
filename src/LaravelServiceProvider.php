@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider as IlluminateServiceProvider;
 
-class ServiceProvider extends IlluminateServiceProvider
+class LaravelServiceProvider extends IlluminateServiceProvider
 {
 	/**
      * Bootstrap any package services.

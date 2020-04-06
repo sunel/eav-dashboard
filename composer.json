@@ -5,8 +5,7 @@
     "license": "MIT",
     "require": {
         "php": ">=7.0.0",
-        "sunel/eav":"^0.1.0",
-        "sunel/json-api-resources":"^0.1"
+        "sunel/eav":"^0.1.0"
     },
     "authors": [
         {
